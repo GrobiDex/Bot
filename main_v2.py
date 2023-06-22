@@ -4,12 +4,13 @@ import sqlite3
 from datetime import datetime, timedelta
 from datetime import date
 import re
-from telegram import LabeledPrice
-
+from hashlib import md5
+from urllib.parse import urlencode
 
 
 bot = telebot.TeleBot('6071429503:AAFZ8V2LdRmrUKINGxmVb2rRxBznyqAqBnc')
-payment_token = '1920051371:TEST:638216808152488606'
+provider_token = '1920051371:TEST:638216808152488606'
+
 
 # Функция проверки подписался пользователь на канал или нет
 def check_subscription(chat_id):
@@ -36,7 +37,7 @@ def search(key_code, user_name):
 
 Дата публикации: {pub_date}
 Дата подачи заявления: {dec_date}
-Ссылка на сообщение: https://test.fedresurs.ru/MessageWindow.aspx?ID={message_guid}&attempt=1'''
+Ссылка на сообщение: https://old.bankrot.fedresurs.ru/MessageWindow.aspx?ID={message_guid}&attempt=1'''
         cursor.close()
         conn.close()
         return text
@@ -89,8 +90,8 @@ def start(message):
     connection.close()
     # Отправляем кнопку "Подписаться" и кнопку для проверки подписки в объединенной клавиатуре inline keyboard
     keyboard = types.InlineKeyboardMarkup()
-    subscribe_button = types.InlineKeyboardButton('Подписаться', url='https://t.me/dealinvalid')
-    check_subscription_button = types.InlineKeyboardButton('Я подписался', callback_data='check_subscription')
+    subscribe_button = types.InlineKeyboardButton('Подписаться', url='https://t.me/+EPWWTZsQ_n1kYmM6')
+    check_subscription_button = types.InlineKeyboardButton('Я подписался', callback_data='privacy_policy')
     keyboard.add(subscribe_button, check_subscription_button)
     bot.send_message(chat_id, 'Чтобы использовать бота, необходимо подписаться на канал @dealinvalid.', reply_markup=keyboard)
 
@@ -276,55 +277,17 @@ def second_main_def(call):
                      'бота также можно получить из кентекстного меню, нажав кнопку справа от строки ' +
                      'ввода сообщений.', reply_markup=keyboard)
 
-# Обработчик оформления платной подписки
+# Оформление платной подписки и возвращение результатов оплаты
 @bot.callback_query_handler(func=lambda call: call.data == 'paid_subscription')
 
 # Обработчик события "Успешная оплата"
 @bot.message_handler(content_types=['successful_payment'])
 def successful_payment(message):
     # Получаем данные о платеже из сообщения об успешной оплате
-    payment_amount = message.successful_payment.total_amount / 100  # сумма платежа в рублях
-    payment_currency = message.successful_payment.currency  # валюта платежа
-    order_info = message.successful_payment.invoice_payload  # дополнительные данные, переданные счетом на оплату
+    print('успех')
 
     # Обрабатываем успешную оплату
     # ...
-
-# Обработчик команды "Оплата"
-@bot.message_handler(commands=['payment'])
-def send_payment_invoice(message):
-    # Создаем объект счета для оплаты
-    invoice = robokassa.invoice(
-        amount=1000,  # сумма к оплате (в рублях)
-        invoice_id='order123',  # уникальный идентификатор заказа
-        description='Подписка на 1 месяц',  # описание заказа
-        currency='RUB',  # валюта заказа
-        extra={
-            'param1': 'value1',
-            'param2': 'value2',
-        },  # дополнительные параметры заказа (опционально)
-        products=[
-            LabeledPrice(label='Подписка на 1 месяц', amount=1000),
-        ],  # список товаров для оплаты
-    )
-
-    # Отправляем пользователю ссылку на оплату
-    # Для этого вы можете использовать метод send_invoice бота:
-    bot.send_invoice(
-        chat_id = message.chat.id,  # ID чата пользователя
-        title = 'Оплата подписки',  # Заголовок счета на оплату
-        description = 'Подписка на 1 месяц',  # Описание счета на оплату
-        provider_token = payment_token,  # Токен провайдера платежа (указывается в настройках бота)
-        start_parameter='start_parameter',  # Параметр, который можно использовать для идентификации команды оплаты в случае, если пользователь перешел по ссылке на счет
-        currency = 'RUB',  # Валюта счета на оплату
-        prices = [LabeledPrice(label='Подписка на 1 месяц', amount=1000)],  # Список товаров для оплаты
-        invoice_id = invoice['InvId'],  # Уникальный идентификатор счета на оплату
-        payload = 'PaySub',  # Дополнительные данные, переданные счетом на оплату (в данном случае, уникальный идентификатор заказа)
-        need_email = True,  # Указывает, нужно ли запрашивать email пользователя при оплате
-        need_phone_number = True,  # Указывает, нужно ли запрашивать телефон пользователя при оплате
-        is_flexible = False,  # Указывает, поддерживает ли платеж различные суммы
-    )
-
 
 
 bot.infinity_polling()
